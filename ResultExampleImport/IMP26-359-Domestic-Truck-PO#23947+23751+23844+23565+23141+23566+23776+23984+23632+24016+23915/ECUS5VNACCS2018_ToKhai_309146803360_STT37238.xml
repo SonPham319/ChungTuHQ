@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Root>
+  <Header>
+    <App>ECUS5VNACCS2018</App>
+    <DBVersion>314</DBVersion>
+    <LastUpdate>16/10/2026</LastUpdate>
+    <VersionMessage>2.0</VersionMessage>
+    <Date>6/11/2026</Date>
+  </Header>
+  <Body>
+  </Body>
+</Root>
