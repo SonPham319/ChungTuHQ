@@ -3,7 +3,7 @@ import sys
 import re
 import subprocess
 import calendar
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
@@ -318,7 +318,7 @@ class AppGUI(tk.Tk):
         r4 = tk.Frame(top_card, bg=self.CARD_BG)
         r4.pack(fill='x', pady=(6, 2))
         tk.Label(r4, text="Ngày làm chứng từ:", font=('Segoe UI', 9, 'bold'), bg=self.CARD_BG, fg=self.TEXT_MAIN, width=18, anchor='w').pack(side='left')
-        self.date_var = tk.StringVar(value=datetime.now().strftime('%d/%m/%Y'))
+        self.date_var = tk.StringVar(value=(datetime.now() + timedelta(days=1)).strftime('%d/%m/%Y'))
         self.date_entry = ttk.Entry(r4, textvariable=self.date_var, font=('Segoe UI', 9, 'bold'), width=14)
         self.date_entry.pack(side='left', padx=(5, 5))
         ttk.Button(r4, text="📅 Lịch", style='Outline.TButton', width=6, command=self.open_calendar).pack(side='left', padx=2)
@@ -729,11 +729,8 @@ class AppGUI(tk.Tk):
         self.inv_path_var.set(os.path.abspath(inv_file) if inv_file else "")
         self.pl_path_var.set(os.path.abspath(pl_file) if pl_file else "")
 
-        # Suggested date based on sample folder
-        if '1645' in chosen or '1650' in chosen:
-            self.date_var.set('02/11/2026')
-        elif '1651' in chosen or '1652' in chosen or '1657' in chosen:
-            self.date_var.set('04/11/2026')
+        # Default document date to tomorrow
+        self.date_var.set((datetime.now() + timedelta(days=1)).strftime('%d/%m/%Y'))
 
         # Automatically trigger analyze
         self.analyze_data()
@@ -806,6 +803,7 @@ class AppGUI(tk.Tk):
         self.pl_path_var.set("")
         self.out_dir_var.set("")
         self.sample_combo.set("")
+        self.date_var.set((datetime.now() + timedelta(days=1)).strftime('%d/%m/%Y'))
 
         self.lbl_do_code.config(text="Mã DO: -")
         self.lbl_consignee.config(text="Người nhận: -")
@@ -1131,7 +1129,7 @@ class AppGUI(tk.Tk):
 
         chosen_date = self.date_var.get().strip()
         if not chosen_date:
-            chosen_date = datetime.now().strftime('%d/%m/%Y')
+            chosen_date = (datetime.now() + timedelta(days=1)).strftime('%d/%m/%Y')
 
         # Read any user manual overrides from edit bar
         override_bk = self.edit_bk_no.get().strip()
