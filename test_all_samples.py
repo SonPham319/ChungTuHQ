@@ -3,7 +3,7 @@ import openpyxl
 import docx
 from core.extractor import parse_delivery_order, parse_booking_awb, parse_invoice_pdf, parse_packing_list_pdf
 from core.validator import validate_shipment_data
-from core.generator import generate_bk_excel, generate_mau25_excel, generate_cv_dong_ghep_docx, generate_fill_script_ahk
+from core.generator import generate_bk_excel, generate_mau25_excel, generate_cv_dong_ghep_docx, generate_fill_script_ahk, generate_ma_xuat_excel
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -73,15 +73,18 @@ for folder in folders:
     
     gen_bk_path = os.path.join(out_dir, 'BK.xlsx')
     gen_m25_path = os.path.join(out_dir, 'mẫu 25 NQ.xlsx')
+    gen_mx_path = os.path.join(out_dir, 'MaXuat.xlsx')
     gen_cv_path = os.path.join(out_dir, 'CV ĐÓNG GHÉP 2026BT-VHD.docx')
     gen_ahk_path = os.path.join(out_dir, 'fillScript.ahk')
     
     generate_bk_excel(do_info, booking_info, c_date, gen_bk_path)
     generate_mau25_excel(do_info, booking_info, c_date, gen_m25_path)
+    generate_ma_xuat_excel(do_info, c_date, gen_mx_path)
     cv_res = generate_cv_dong_ghep_docx(do_info, gen_cv_path)
     ahk_res = generate_fill_script_ahk(do_info, booking_info, inv_info, pl_info, c_date, gen_ahk_path)
     print(f"Generated BK -> {gen_bk_path}")
     print(f"Generated Mẫu 25 -> {gen_m25_path}")
+    print(f"Generated MaXuat -> {gen_mx_path}")
     if cv_res:
         print(f"Generated CV Đóng Ghép -> {gen_cv_path}")
     if ahk_res:
@@ -182,6 +185,27 @@ for folder in folders:
             print(f"  fillScript.ahk Diffs ({len(diffs)}):")
             for idx, vo, vg in diffs:
                 print(f"    Send #{idx}: Orig='{vo}' vs Gen='{vg}'")
+
+    # Verify generated MaXuat.xlsx vs original MaXuat.xlsx
+    orig_mx = os.path.join(folder, 'MaXuat.xlsx')
+    if os.path.exists(orig_mx) and os.path.exists(gen_mx_path):
+        wb_o = openpyxl.load_workbook(orig_mx, data_only=True)
+        wb_g = openpyxl.load_workbook(gen_mx_path, data_only=True)
+        ws_o = wb_o['Sheet1']
+        ws_g = wb_g['Sheet1']
+        mx_diffs = []
+        for r in range(1, max(ws_o.max_row, ws_g.max_row) + 1):
+            for c in range(1, 6):
+                vo = ws_o.cell(r, c).value
+                vg = ws_g.cell(r, c).value
+                if vo != vg:
+                    mx_diffs.append((r, c, vo, vg))
+        if not mx_diffs:
+            print("  >>> MaXuat.xlsx MATCH 100%! <<<")
+        else:
+            print(f"  MaXuat.xlsx Diffs ({len(mx_diffs)}):")
+            for r, c, vo, vg in mx_diffs[:10]:
+                print(f"    R{r}C{c}: Orig={repr(vo)} vs Gen={repr(vg)}")
 
 
 

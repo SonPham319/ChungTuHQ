@@ -778,3 +778,85 @@ def generate_nhapkho_excel(tokhai_info, plhd_num, import_date, output_path, base
     return output_path
 
 
+def generate_ma_xuat_excel(delivery_info, chosen_date, output_path, base_template_path=None):
+    """
+    Generates 'MaXuat.xlsx' from Delivery Order items using templates/MaXuat_template.xlsx.
+    Items are merged ONLY when both TK nhập and mã liệu (item_code) match.
+    Columns:
+      1 (A): Số TK nhập (int if numeric)
+      2 (B): Mã liệu (item_code)
+      3 (C): Ngày làm chứng từ (datetime, mm-dd-yy)
+      4 (D): Số DO (int extracted from do_code, e.g. EXP26-1645 -> 1645)
+      5 (E): Số lượng (int, summed)
+    """
+    if not base_template_path:
+        base_template_path = os.path.join(os.path.dirname(__file__), '..', 'templates', 'MaXuat_template.xlsx')
+
+    if not os.path.exists(base_template_path):
+        raise FileNotFoundError(f"MaXuat template not found at {base_template_path}")
+
+    wb = openpyxl.load_workbook(base_template_path)
+    ws = wb['Sheet1'] if 'Sheet1' in wb.sheetnames else wb.active
+
+    dt = to_date_obj(chosen_date)
+    date_val = datetime(dt.year, dt.month, dt.day, 0, 0)
+
+    do_code = str(delivery_info.get('do_code', '') or '').strip()
+    m_do = re.search(r'-(\d+)$', do_code)
+    if not m_do:
+        m_do = re.search(r'(\d+)$', do_code)
+    do_num = int(m_do.group(1)) if m_do else do_code
+
+    items = delivery_info.get('ma_xuat_items')
+    if items is None:
+        raw_items = delivery_info.get('raw_items') or delivery_info.get('grouped_items') or []
+        grouped = {}
+        for it in raw_items:
+            key = (it.get('tk_nhap', ''), it.get('item_code', ''))
+            if key in grouped:
+                grouped[key]['quantity'] += it.get('quantity', 0)
+            else:
+                grouped[key] = {
+                    'tk_nhap': it.get('tk_nhap', ''),
+                    'item_code': it.get('item_code', ''),
+                    'quantity': it.get('quantity', 0),
+                }
+        items = list(grouped.values())
+
+    font_11 = Font(name='Times New Roman', size=11, bold=False)
+    align_center = Alignment(horizontal='center', vertical='center')
+    align_vcenter = Alignment(vertical='center')
+
+    for r, item in enumerate(items, start=1):
+        tk_str = str(item.get('tk_nhap', '')).strip()
+        tk_val = int(tk_str) if tk_str.isdigit() else tk_str
+
+        ws.cell(r, 1).value = tk_val
+        ws.cell(r, 2).value = item.get('item_code', '')
+        ws.cell(r, 3).value = date_val
+        ws.cell(r, 4).value = do_num
+        ws.cell(r, 5).value = item.get('quantity', 0)
+
+        # Ensure styling if row exceeds pre-formatted template rows
+        if r > 151:
+            for c in range(1, 6):
+                cell = ws.cell(r, c)
+                cell.font = font_11
+                cell.border = THIN_BORDER
+            ws.cell(r, 1).number_format = '0'
+            ws.cell(r, 1).alignment = align_center
+            ws.cell(r, 2).number_format = 'General'
+            ws.cell(r, 2).alignment = align_center
+            ws.cell(r, 3).number_format = 'mm-dd-yy'
+            ws.cell(r, 3).alignment = align_center
+            ws.cell(r, 4).number_format = '0'
+            ws.cell(r, 4).alignment = align_center
+            ws.cell(r, 5).number_format = 'General'
+            ws.cell(r, 5).alignment = align_vcenter
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    wb.save(output_path)
+    return output_path
+
+
+

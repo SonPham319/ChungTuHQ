@@ -14,7 +14,7 @@ from core.extractor import (
 from core.validator import validate_shipment_data
 from core.generator import (
     generate_bk_excel, generate_mau25_excel, generate_cv_dong_ghep_docx, generate_fill_script_ahk,
-    generate_cv_chia_tach_docx, generate_nhapkho_excel, to_date_obj
+    generate_ma_xuat_excel, generate_cv_chia_tach_docx, generate_nhapkho_excel, to_date_obj
 )
 
 
@@ -765,7 +765,7 @@ class AppGUI(tk.Tk):
         if not do_path:
             for f in files:
                 fl = f.lower()
-                if fl.endswith(('.xlsx', '.xls')) and 'bk' not in fl and 'mẫu 25' not in fl and 'mau 25' not in fl and 'booking' not in fl:
+                if fl.endswith(('.xlsx', '.xls')) and 'bk' not in fl and 'mẫu 25' not in fl and 'mau 25' not in fl and 'booking' not in fl and 'maxuat' not in fl:
                     do_path = os.path.join(directory, f)
                     break
 
@@ -1150,12 +1150,14 @@ class AppGUI(tk.Tk):
 
         bk_out_path = os.path.join(out_dir, "BK.xlsx")
         m25_out_path = os.path.join(out_dir, "mẫu 25 NQ.xlsx")
+        ma_xuat_out_path = os.path.join(out_dir, "MaXuat.xlsx")
         cv_out_path = os.path.join(out_dir, "CV ĐÓNG GHÉP 2026BT-VHD.docx")
         ahk_out_path = os.path.join(out_dir, "fillScript.ahk")
 
         try:
             generate_bk_excel(self.delivery_info, self.booking_info, chosen_date, bk_out_path)
             generate_mau25_excel(self.delivery_info, self.booking_info, chosen_date, m25_out_path)
+            generate_ma_xuat_excel(self.delivery_info, chosen_date, ma_xuat_out_path)
             cv_res = generate_cv_dong_ghep_docx(self.delivery_info, cv_out_path)
 
             ahk_res = None
@@ -1183,6 +1185,7 @@ class AppGUI(tk.Tk):
             created_files = [
                 os.path.basename(bk_out_path),
                 os.path.basename(m25_out_path),
+                os.path.basename(ma_xuat_out_path),
             ]
             if cv_res:
                 created_files.append(os.path.basename(cv_out_path))

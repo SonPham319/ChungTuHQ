@@ -216,6 +216,19 @@ def parse_delivery_order(filepath):
                 'unit': it['unit']
             }
 
+    # Deduplicate and aggregate by (TK nhập, mã liệu) for MaXuat.xlsx
+    ma_xuat_grouped = {}
+    for it in items:
+        key = (it['tk_nhap'], it['item_code'])
+        if key in ma_xuat_grouped:
+            ma_xuat_grouped[key]['quantity'] += it['quantity']
+        else:
+            ma_xuat_grouped[key] = {
+                'tk_nhap': it['tk_nhap'],
+                'item_code': it['item_code'],
+                'quantity': it['quantity'],
+            }
+
     calculated_pcs = sum(it['quantity'] for it in grouped.values())
     if not total_pcs:
         total_pcs = calculated_pcs
@@ -232,7 +245,9 @@ def parse_delivery_order(filepath):
         'total_gw': total_gw,
         'total_pcs': total_pcs,
         'raw_items_count': len(items),
+        'raw_items': items,
         'grouped_items': list(grouped.values()),
+        'ma_xuat_items': list(ma_xuat_grouped.values()),
         'duplicates_count': len(duplicates),
         'duplicates': duplicates
     }
